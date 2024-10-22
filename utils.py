@@ -59,12 +59,13 @@ def generate_sample_data(num_samples):
     return np.column_stack((x, y, z)), np.column_stack((xa, ya, za))
 
 
-def plot_metric(train_metric, val_metric, metric_name, save_path):
+def plot_metric(train_metric, val_metric, metric_name, save_path, yscale='linear'):
     plt.figure(figsize=(10, 5))
     plt.plot(train_metric, label=f'Training {metric_name}')
     plt.plot(val_metric, label=f'Validation {metric_name}')
     plt.xlabel('Epochs')
     plt.ylabel(metric_name)
+    plt.yscale(yscale)
     plt.legend()
     plt.title(f'Training and Validation {metric_name}')
     plt.savefig(save_path)

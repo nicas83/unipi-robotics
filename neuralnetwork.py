@@ -96,7 +96,7 @@ def random_search(X, Y, input_size, output_size, num_epochs, num_trials=20, kine
     sorted_results = sorted(all_results, key=itemgetter('val_loss'))
 
     # Salva i risultati ordinati in un file JSON
-    with open('search/random_search_' + kinematics + '_results.json', 'w') as f:
+    with open('search/random_search_results_' + kinematics + '.json', 'w') as f:
         json.dump(sorted_results, f, indent=2)
 
 
@@ -206,9 +206,9 @@ def main():
 
     # Usa la ricerca casuale per trovare i migliori iperparametri
     X, Y = read_data('dataset.txt', 'inverse')
-    random_search(X, Y, 3, 3, 200, 20, 'inverse')
+    # random_search(X, Y, 3, 3, 200, 20, 'inverse')
 
-    #final_training(X, Y)
+    final_training(X, Y, 'inverse')
 
     # # Carica il modello salvato
     # model = InverseKinematicsModel()

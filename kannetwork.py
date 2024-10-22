@@ -37,12 +37,6 @@ def grid_search_kan(X, Y, param_grid, test_size=0.2):
         # Addestra il modello
         results = model.fit(dataset, opt=optimizer, lr=learning_rate, steps=steps, lamb=lambda_reg, batch=batch)
 
-        # Valuta il modello
-        # model.eval()
-        # with torch.no_grad():
-        #     predictions = model(X_test)
-        #     mse = torch.mean((predictions - Y_test) ** 2).item()
-
         mse_kan = np.mean(results['test_loss'])
         print(f"Combination {i + 1}/{len(param_combinations)}: MSE = {mse_kan}")
         config = {
@@ -71,15 +65,27 @@ def train_final_model(X, Y, config):
     Y_tensor = torch.FloatTensor(Y)
 
     dataset = create_dataset_from_data(X_tensor, Y_tensor, train_ratio=0.8, device='cpu')
+    #  n,2n+1
+    width = [X.shape[1]] + [X.shape[1] * 2 + 1] * config['hidden_layers'] + [Y.shape[1]]
+    width = [3, 1, 1, 3]
+    grid = [7, 10]
+    # model = KAN(width=width, grid=config['grid'], k=config['k'], seed=1)
+    # history = model.fit(dataset, opt=config['optimizer'], lr=config['learning_rate'],
+    #                     steps=config['steps'], lamb=config['lambda'], lamb_entropy=5, batch=config['batch'])
 
-    width = [X.shape[1]] + [config['neurons']] * config['hidden_layers'] + [Y.shape[1]]
-    model = KAN(width=width, grid=config['grid'], k=config['k'], seed=42)
-    history = model.fit(dataset, opt=config['optimizer'], lr=config['learning_rate'],
-                            steps=config['steps'], lamb=config['lambda'], batch=config['batch'])
+    model = KAN(width=[3, 7, 3], grid=5, k=3, seed=42)
+    history = model.fit(dataset, opt='LBFGS', lr=0.001, steps=200, lamb=0.01, lamb_entropy=10)
+
+    # for value in grid:
+    #     model = model.refine(value)
+    #     history = model.fit(dataset, opt=config['optimizer'], lr=config['learning_rate'],
+    #                         steps=config['steps'], lamb=config['lambda'], lamb_entropy=5, batch=config['batch'])
+    #
+    # model = model.prune()
 
     # Salva il modello finale
     model.saveckpt(path='model/kan/final_model_kan_direct.pth')
-   # model.plot(folder='model/kan', beta=100)
+    # model.plot(folder='model/kan', beta=100)
     print("Final model saved to 'final_model.pth'")
     return history
 
