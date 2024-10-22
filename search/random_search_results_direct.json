@@ -1,0 +1,302 @@
+[
+  {
+    "hidden_sizes": [
+      256,
+      256,
+      64
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.001,
+    "weight_decay": 1e-06,
+    "batch_size": 256,
+    "dropout_rate": 0.31616740941373195,
+    "val_loss": 0.0009506787755526602,
+    "r2_score": 0.7841906673093736
+  },
+  {
+    "hidden_sizes": [
+      512,
+      64,
+      128,
+      64,
+      256
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.0001,
+    "weight_decay": 0,
+    "batch_size": 128,
+    "dropout_rate": 0.13234199617693068,
+    "val_loss": 0.000958892225753516,
+    "r2_score": 0.7825294680226259
+  },
+  {
+    "hidden_sizes": [
+      64,
+      128,
+      256,
+      256,
+      64
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.01,
+    "weight_decay": 1e-06,
+    "batch_size": 256,
+    "dropout_rate": 0.11240466316036701,
+    "val_loss": 0.0017209857469424605,
+    "r2_score": 0.609871545429001
+  },
+  {
+    "hidden_sizes": [
+      512,
+      128,
+      256,
+      256,
+      128
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.1,
+    "weight_decay": 1e-06,
+    "batch_size": 256,
+    "dropout_rate": 0.11040982037871792,
+    "val_loss": 0.0034472020342946053,
+    "r2_score": 0.22109792602778325
+  },
+  {
+    "hidden_sizes": [
+      256,
+      512,
+      512,
+      128
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.1,
+    "weight_decay": 0,
+    "batch_size": 32,
+    "dropout_rate": 0.383835550684847,
+    "val_loss": 0.0034589015413075686,
+    "r2_score": 0.2181374554704589
+  },
+  {
+    "hidden_sizes": [
+      512,
+      256,
+      512,
+      64
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.001,
+    "weight_decay": 1e-05,
+    "batch_size": 256,
+    "dropout_rate": 0.48312124343316754,
+    "val_loss": 0.0035515690688043833,
+    "r2_score": 0.1973673972405856
+  },
+  {
+    "hidden_sizes": [
+      64,
+      256,
+      256,
+      256
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.01,
+    "weight_decay": 0.0001,
+    "batch_size": 256,
+    "dropout_rate": 0.12803513302781272,
+    "val_loss": 0.0036198836751282215,
+    "r2_score": 0.18228166033653945
+  },
+  {
+    "hidden_sizes": [
+      128,
+      256
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.01,
+    "weight_decay": 0,
+    "batch_size": 128,
+    "dropout_rate": 0.182834907779811,
+    "val_loss": 0.0037097411695867777,
+    "r2_score": 0.16236435773047722
+  },
+  {
+    "hidden_sizes": [
+      512,
+      128,
+      256,
+      128,
+      128
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.01,
+    "weight_decay": 0.0001,
+    "batch_size": 256,
+    "dropout_rate": 0.23100700500303778,
+    "val_loss": 0.003766109235584736,
+    "r2_score": 0.14998307448289028
+  },
+  {
+    "hidden_sizes": [
+      64,
+      64,
+      512
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.01,
+    "weight_decay": 1e-05,
+    "batch_size": 256,
+    "dropout_rate": 0.490553808525344,
+    "val_loss": 0.0037750008050352335,
+    "r2_score": 0.14765986636698805
+  },
+  {
+    "hidden_sizes": [
+      128,
+      256,
+      512,
+      128,
+      128
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.0001,
+    "weight_decay": 1e-05,
+    "batch_size": 32,
+    "dropout_rate": 0.11794969291502332,
+    "val_loss": 0.0037940978072583675,
+    "r2_score": 0.14359605977427256
+  },
+  {
+    "hidden_sizes": [
+      256,
+      128
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.01,
+    "weight_decay": 1e-05,
+    "batch_size": 256,
+    "dropout_rate": 0.3233691534242735,
+    "val_loss": 0.003875131020322442,
+    "r2_score": 0.12597657133173037
+  },
+  {
+    "hidden_sizes": [
+      512,
+      64,
+      256
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.0001,
+    "weight_decay": 0,
+    "batch_size": 256,
+    "dropout_rate": 0.4386630079862034,
+    "val_loss": 0.0040076980367302895,
+    "r2_score": 0.09620793831420398
+  },
+  {
+    "hidden_sizes": [
+      512,
+      512,
+      256,
+      128,
+      512
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "batch_size": 256,
+    "dropout_rate": 0.3503770411538216,
+    "val_loss": 0.004082732833921909,
+    "r2_score": 0.07959525765237925
+  },
+  {
+    "hidden_sizes": [
+      512,
+      512,
+      512,
+      512,
+      64
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "batch_size": 256,
+    "dropout_rate": 0.2778953438288777,
+    "val_loss": 0.004085063468664885,
+    "r2_score": 0.07917444409161463
+  },
+  {
+    "hidden_sizes": [
+      512,
+      256,
+      64,
+      128
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.01,
+    "weight_decay": 0.0001,
+    "batch_size": 256,
+    "dropout_rate": 0.17606393383988334,
+    "val_loss": 0.004291472490876913,
+    "r2_score": 0.03319947449055024
+  },
+  {
+    "hidden_sizes": [
+      64,
+      64,
+      128
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.01,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "dropout_rate": 0.257522950508036,
+    "val_loss": 0.004366102162748575,
+    "r2_score": 0.01567398153006716
+  },
+  {
+    "hidden_sizes": [
+      256,
+      64,
+      128
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.1,
+    "weight_decay": 0.0001,
+    "batch_size": 64,
+    "dropout_rate": 0.42217527473374605,
+    "val_loss": 0.004507684148848057,
+    "r2_score": -0.014556756785288116
+  },
+  {
+    "hidden_sizes": [
+      512,
+      256,
+      512,
+      256,
+      128
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.01,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "dropout_rate": 0.4804459812733054,
+    "val_loss": 0.004682791419327259,
+    "r2_score": -0.052946034361275096
+  },
+  {
+    "hidden_sizes": [
+      256,
+      64,
+      512,
+      512,
+      256
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.01,
+    "weight_decay": 0,
+    "batch_size": 32,
+    "dropout_rate": 0.26129719996165207,
+    "val_loss": 17.878490447998047,
+    "r2_score": -4097.082148648568
+  }
+]

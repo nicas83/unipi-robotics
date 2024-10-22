@@ -1,98 +1,158 @@
-import numpy as np
-from torch.utils.data import TensorDataset, DataLoader
+import json
 
 from pykan.kan import *
+from utils import read_data, plot_metric
+from itertools import product
 
 
-def generate_sample_data(num_samples):
-    # configuration
-    x = np.random.uniform(0, 1, num_samples)
-    y = np.random.uniform(0, 1, num_samples)
-    z = np.random.uniform(0, 1, num_samples)
+def grid_search_kan(X, Y, param_grid, test_size=0.2):
+    # Dividi i dati in training e test set
+    n_samples = X.shape[0]
+    n_test = int(n_samples * test_size)
+    indices = np.random.permutation(n_samples)
+    X_train, X_test = X[indices[:-n_test]], X[indices[-n_test:]]
+    Y_train, Y_test = Y[indices[:-n_test]], Y[indices[-n_test:]]
 
-    # actuator
-    xa = np.random.uniform(0, 1, num_samples)
-    ya = np.random.uniform(0, 1, num_samples)
-    za = np.random.uniform(0, 1, num_samples)
-
-    return np.column_stack((x, y, z)), np.column_stack((xa, ya, za))
-
-
-def read_data(filename):
-    X = []  # configuration
-    Y = []  # act
-
-    with open(filename, 'r') as f:
-        # Salta la riga di intestazione
-        next(f)
-        for line in f:
-            parts = line.strip().split()
-
-            # configuration (input) è composto dai primi 3 valori
-            configuration = list(map(float, parts[:3]))
-            X.append(configuration)
-            # act (output) è composto dagli ultimi valori
-            act = list(map(float, parts[3:6]))
-            Y.append(act)
-
-    return torch.FloatTensor(X), torch.FloatTensor(Y)
-
-
-def prepare_data_for_pytorch(X, Y, batch_size=32):
     # Converti in tensori PyTorch
+    X_train, Y_train = torch.FloatTensor(X_train), torch.FloatTensor(Y_train)
+    X_test, Y_test = torch.FloatTensor(X_test), torch.FloatTensor(Y_test)
+
+    all_configs = []
+
+    # Genera tutte le possibili combinazioni di parametri
+    param_combinations = list(product(*param_grid.values()))
+
+    for i, params in enumerate(param_combinations):
+        # Estrai i parametri
+        hidden_layers, neurons, grid, k, optimizer, learning_rate, lambda_reg, steps, batch = params
+        # Costruisci la configurazione width
+        width = [X.shape[1]] + [neurons] * hidden_layers + [Y.shape[1]]
+
+        # Crea il modello
+        model = KAN(width=width, grid=grid, k=k)
+
+        # Prepara il dataset
+        dataset = create_dataset_from_data(X_train, Y_train, train_ratio=0.8, device='cpu')
+
+        # Addestra il modello
+        results = model.fit(dataset, opt=optimizer, lr=learning_rate, steps=steps, lamb=lambda_reg, batch=batch)
+
+        # Valuta il modello
+        # model.eval()
+        # with torch.no_grad():
+        #     predictions = model(X_test)
+        #     mse = torch.mean((predictions - Y_test) ** 2).item()
+
+        mse_kan = np.mean(results['test_loss'])
+        print(f"Combination {i + 1}/{len(param_combinations)}: MSE = {mse_kan}")
+        config = {
+            'hidden_layers': hidden_layers,
+            'neurons': neurons,
+            'grid': grid,
+            'k': k,
+            'optimizer': optimizer,
+            'learning_rate': learning_rate,
+            'lambda': lambda_reg,
+            'steps': steps,
+            'batch': batch,
+            'mse': float(np.mean(results['test_loss']))
+        }
+        all_configs.append(config)
+    # Ordina le configurazioni per MSE crescente
+    all_configs.sort(key=lambda x: x['mse'])
+
+    # Salva tutte le configurazioni in un file JSON
+    with open('grid_search_kan_direct.json', 'w') as f:
+        json.dump(all_configs, f, indent=2)
+
+
+def train_final_model(X, Y, config):
     X_tensor = torch.FloatTensor(X)
     Y_tensor = torch.FloatTensor(Y)
 
-    # Crea dataset e dataloader
-    dataset = TensorDataset(X_tensor, Y_tensor)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    dataset = create_dataset_from_data(X_tensor, Y_tensor, train_ratio=0.8, device='cpu')
 
-    return dataloader
+    width = [X.shape[1]] + [config['neurons']] * config['hidden_layers'] + [Y.shape[1]]
+    model = KAN(width=width, grid=config['grid'], k=config['k'], seed=42)
+    history = model.fit(dataset, opt=config['optimizer'], lr=config['learning_rate'],
+                            steps=config['steps'], lamb=config['lambda'], batch=config['batch'])
+
+    # Salva il modello finale
+    model.saveckpt(path='model/kan/final_model_kan_direct.pth')
+   # model.plot(folder='model/kan', beta=100)
+    print("Final model saved to 'final_model.pth'")
+    return history
 
 
-def train_model():
-    # width rappresenta la struttura del modello: primo parametri dimension input (x,y in questo caso), secondo il
-    # numero di neuroni, il terzo dimension dell'output, k è il grado della funzione spline (3=cubica), capire cosa
-    # è il grid
-    X, Y = read_data("dataset.txt")
+def execute_final_training(X, Y, config_file='grid_search_kan_direct.json'):
+    with open(config_file, 'r') as f:
+        all_configs = json.load(f)
 
-    # capire come fare lo shuffle dei dati
-    dataset = create_dataset_from_data(X, Y, train_ratio=0.8, device='cpu')
+    best_config = all_configs[0]  # La prima configurazione è la migliore
 
-    model = KAN(width=[3, 5, 3], grid=5, k=3, seed=42)
+    print("Training final model with best configuration:")
+    print(best_config)
 
-    # model(dataset['train_input'])
-    # model.plot(beta=100)
+    # Addestra il modello finale
+    history = train_final_model(X, Y, best_config)
 
-    # Training loop: steps corrisponde al numero di epoche del fit
-    model.fit(dataset, opt="Adam", steps=100, lamb=0.01, batch=5)
+    # Plotta e salva i risultati
+    plot_metric(history['train_loss'], history['test_loss'], 'Loss', 'model/kan/training_kan_direct_results.png')
+
+    print("Final model trained. Results plotted and saved to 'training_results.png'")
 
 
 def main():
-    #train_model()
+    # Definizione della griglia di parametri estesa
+    param_grid = {
+        'hidden_layers': [1, 2, 3],
+        'neurons': [5, 10, 15],
+        'grid': [3, 5, 7],
+        'k': [2, 3, 4],
+        'optimizer': ['Adam', 'LBFGS'],
+        'learning_rate': [0.001, 0.01, 0.1],
+        'lambda': [0.001, 0.01, 0.1],
+        'steps': [200],
+        'batch': [32, 64, 128, 256]
+    }
 
+    X, Y = read_data("dataset.txt", 'direct')
+    # X, Y = read_data("dataset.txt", 'inverse')
+    # grid_search_kan(X, Y, param_grid)
+    execute_final_training(X, Y, 'grid_search_kan_direct.json')
+
+    # train_model()
     # valutare la parametrizzazione dell'inizializzazione del modello
-    model = KAN(width=[3, 5, 3], grid=5, k=3)
-    # carico l'ultimo modello addestrato
-    model.loadckpt('model/0.1')
-
-    # Imposta il modello in modalità valutazione
-    model.eval()
-    # test del modello con esempi generati randomicamente
-    num_test_samples = 1
-    X_test, y_true = generate_sample_data(num_test_samples)
-    X_test_tensor = torch.FloatTensor(X_test)
-    # Esegui la predizione
-    with torch.no_grad():
-        y_pred = model(X_test_tensor).numpy()
-
-    print("Test Results:")
-    for i in range(num_test_samples):
-        print(f"Input (x, y, z): {X_test[i]}")
-        print(f"Predicted actuation: {y_pred[i]}")
-        print(f"True actuation: {y_true[i]}")
-    #     print()
+    # model = KAN(width=[3, 5, 3], grid=5, k=3)
+    # # carico l'ultimo modello addestrato
+    # model.loadckpt('model/0.0')
+    #
+    # # Imposta il modello in modalità valutazione
+    # model.eval()
+    # # test del modello con esempi generati randomicamente
+    # num_test_samples = 1
+    # # X_test, y_true = generate_sample_data(num_test_samples)
+    # act = np.array([
+    #     [-0.002, -0.02, -0.036],
+    #     #     # [0.237, 0.312, 0.13],
+    #     #     # [.2, .2, .18]
+    # ])
+    # X_test_tensor = torch.FloatTensor(act)
+    # # Esegui la predizione
+    # with torch.no_grad():
+    #     y_pred = model(X_test_tensor).numpy()
+    #
+    # print("Test Results:")
+    # for i in range(num_test_samples):
+    #     print(f"Input (x, y, z): {act[i]}")
+    #     print(f"Predicted actuation: {y_pred[i]}")
+    #     # print(f"True actuation: {y_true[i]}")
+    # #     print()
 
 
 if __name__ == "__main__":
     main()
+
+# Best configuration found:
+# {'hidden_layers': 1, 'neurons': 10, 'grid': 3, 'k': 4, 'optimizer': 'Adam', 'learning_rate': 0.01, 'lambda': 0.001,
+# 'steps': 200, 'batch': 64, 'mse': 0.003728143870830536}

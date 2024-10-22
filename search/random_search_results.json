@@ -1,0 +1,104 @@
+[
+  {
+    "hidden_sizes": [
+      64,
+      256
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "batch_size": 256,
+    "dropout_rate": 0.11650649222683387,
+    "val_loss": 0.03378450497984886,
+    "r2_score": 0.5418474599851666
+  },
+  {
+    "hidden_sizes": [
+      512,
+      256,
+      64,
+      128
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.01,
+    "weight_decay": 1e-06,
+    "batch_size": 128,
+    "dropout_rate": 0.33271780999030576,
+    "val_loss": 0.03379589691758156,
+    "r2_score": 0.541936001416084
+  },
+  {
+    "hidden_sizes": [
+      64,
+      128,
+      128,
+      256,
+      512
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.1,
+    "weight_decay": 0.0001,
+    "batch_size": 256,
+    "dropout_rate": 0.4250009495092383,
+    "val_loss": 0.03603598102927208,
+    "r2_score": 0.5133939740992586
+  },
+  {
+    "hidden_sizes": [
+      128,
+      128,
+      512,
+      128,
+      64
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.001,
+    "weight_decay": 1e-05,
+    "batch_size": 256,
+    "dropout_rate": 0.2275890093998857,
+    "val_loss": 0.040835026651620865,
+    "r2_score": 0.44898483663716443
+  },
+  {
+    "hidden_sizes": [
+      512,
+      512
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.001,
+    "weight_decay": 1e-05,
+    "batch_size": 256,
+    "dropout_rate": 0.2954220425371437,
+    "val_loss": 0.04194650053977966,
+    "r2_score": 0.43785783278344165
+  },
+  {
+    "hidden_sizes": [
+      128,
+      512,
+      64
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "batch_size": 128,
+    "dropout_rate": 0.4376043973906798,
+    "val_loss": 0.0539049468934536,
+    "r2_score": 0.2871777746853585
+  },
+  {
+    "hidden_sizes": [
+      512,
+      512,
+      64,
+      256
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.1,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "dropout_rate": 0.28832639848330266,
+    "val_loss": 14797.1494140625,
+    "r2_score": -204842.10082222347
+  }
+]

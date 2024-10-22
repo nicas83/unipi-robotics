@@ -1,4 +1,5 @@
 import itertools
+import random
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -6,7 +7,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import math
 
-
+# test
 def fk_indep(conf):
     Nsegs = len(conf["k"])
     assert len(conf["l"]) == Nsegs and len(conf["alpha"]) == Nsegs
@@ -203,39 +204,43 @@ def flatten_array(arr):
     return ' '.join(map(str, arr.flatten()))
 
 
-def generateRandomDataset():
+def generateRandomDataset(num_simulation):
     R = .02
 
     # Definisci il range per ogni coordinata tra 0.1 e 1
-    x_range = np.random.uniform(0.1, 1, 10)
-    y_range = np.random.uniform(0.1, 1, 10)
-    z_range = np.random.uniform(0.1, 1, 10)
+    x_range = np.round(np.random.uniform(0.0, 1, num_simulation), 3)
+    y_range = np.round(np.random.uniform(0.0, 1, num_simulation), 3)
+    z_range = np.round(np.random.uniform(0.1, 1, num_simulation), 3)
 
     # Genera tutte le possibili combinazioni
     all_combinations = list(itertools.product(x_range, y_range, z_range))
+    random.shuffle(all_combinations)
 
     # Apri il file per scrivere i risultati
     with open('dataset.txt', 'w') as f:
         # Scrivi l'intestazione
-        f.write("configuration (3 values) actuation (3 values) poses (6 values)  \n")
+        f.write(" actuation (3 values -xyz) poses (6 values -xyz, zyx euler angles) configuration (3 values xyz)  \n")
 
         # Itera su tutte le combinazioni, recuperandone al massimo 100: DA CAMBIARE IN FASE DI TRAINING DEFINITIVO
-        for i, combination in enumerate(all_combinations[:100]):
+        for i, combination in enumerate(all_combinations[:100000]):
             act = np.array([list(combination)])
 
             conf = fk_dep(act, R)
-            poses = fk_indep(conf)
-            configuration = conf_to_mat(conf)
+            poses = np.round(fk_indep(conf), 3)
+            configuration = np.round(conf_to_mat(conf), 3)
 
-            # Scrivi i risultati nel file in formato tabellare
-            f.write(f"{flatten_array(configuration)} {flatten_array(act)} {flatten_array(poses)}\n")
+            # Scrivi i risultati nel file in formato tabellare.
+            # Il vettore poses contiene le 3 dimensioni della posizione del punto più i valori degli angoli
+            # di Eulero zyx da analizzare in una seconda fase
+            f.write(f"{flatten_array(act)} {flatten_array(poses)} {flatten_array(configuration)} \n")
 
 
 def main():
-    generateRandomDataset()
+    # num simulazioni in input
+    generateRandomDataset(100)
 
     # act = np.array([
-    #     [.1, .1, .1],
+    #     [.1, .1, .156],
     #     # [.2, .18, .2],
     #     # [.2, .2, .18]
     # ])
