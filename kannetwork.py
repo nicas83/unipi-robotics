@@ -60,7 +60,7 @@ def grid_search_kan(X, Y, param_grid, test_size=0.2):
         json.dump(all_configs, f, indent=2)
 
 
-def train_final_model(X, Y, config):
+def train_final_model(X, Y, config, kinematics='inverse'):
     X_tensor = torch.FloatTensor(X)
     Y_tensor = torch.FloatTensor(Y)
 
@@ -73,8 +73,8 @@ def train_final_model(X, Y, config):
     # history = model.fit(dataset, opt=config['optimizer'], lr=config['learning_rate'],
     #                     steps=config['steps'], lamb=config['lambda'], lamb_entropy=5, batch=config['batch'])
 
-    model = KAN(width=[3, 7, 3], grid=5, k=3, seed=42)
-    history = model.fit(dataset, opt='LBFGS', lr=0.001, steps=200, lamb=0.01, lamb_entropy=10)
+    model = KAN(width=[3, 7, 3], grid=5, k=3, seed=21)
+    history = model.fit(dataset, opt='LBFGS', lr=0.0001, steps=200, lamb=0.01,  lamb_entropy=1) #entropy 10
 
     # for value in grid:
     #     model = model.refine(value)
@@ -84,13 +84,13 @@ def train_final_model(X, Y, config):
     # model = model.prune()
 
     # Salva il modello finale
-    model.saveckpt(path='model/kan/final_model_kan_direct.pth')
+    model.saveckpt(path='model/kan/final_model_kan_'+kinematics+'.pth')
     # model.plot(folder='model/kan', beta=100)
-    print("Final model saved to 'final_model.pth'")
+    print("Final model saved")
     return history
 
 
-def execute_final_training(X, Y, config_file='grid_search_kan_direct.json'):
+def execute_final_training(X, Y, config_file='grid_search_kan_direct.json',kinematics='inverse'):
     with open(config_file, 'r') as f:
         all_configs = json.load(f)
 
@@ -103,9 +103,9 @@ def execute_final_training(X, Y, config_file='grid_search_kan_direct.json'):
     history = train_final_model(X, Y, best_config)
 
     # Plotta e salva i risultati
-    plot_metric(history['train_loss'], history['test_loss'], 'Loss', 'model/kan/training_kan_direct_results.png')
+    plot_metric(history['train_loss'], history['test_loss'], 'Loss', 'model/kan/training_kan_'+kinematics+'_loss.png')
 
-    print("Final model trained. Results plotted and saved to 'training_results.png'")
+    print("Final model trained. Results plotted and saved")
 
 
 def main():
@@ -125,7 +125,7 @@ def main():
     X, Y = read_data("dataset.txt", 'direct')
     # X, Y = read_data("dataset.txt", 'inverse')
     # grid_search_kan(X, Y, param_grid)
-    execute_final_training(X, Y, 'grid_search_kan_direct.json')
+    execute_final_training(X, Y, 'grid_search_kan_direct.json','direct')
 
     # train_model()
     # valutare la parametrizzazione dell'inizializzazione del modello
