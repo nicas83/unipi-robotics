@@ -1,6 +1,9 @@
 import json
 
-from pykan.kan import *
+import numpy as np
+import torch
+
+from kan import KAN, create_dataset_from_data
 from utils import read_data, plot_metric
 from itertools import product
 
@@ -68,18 +71,22 @@ def train_final_model(X, Y, config, kinematics='inverse'):
     #  n,2n+1
     width = [X.shape[1]] + [X.shape[1] * 2 + 1] * config['hidden_layers'] + [Y.shape[1]]
     width = [3, 1, 1, 3]
-    grid = [7, 10]
+    grid = [10]
     # model = KAN(width=width, grid=config['grid'], k=config['k'], seed=1)
     # history = model.fit(dataset, opt=config['optimizer'], lr=config['learning_rate'],
     #                     steps=config['steps'], lamb=config['lambda'], lamb_entropy=5, batch=config['batch'])
 
-    model = KAN(width=[3, 7, 3], grid=5, k=3, seed=21)
-    history = model.fit(dataset, opt='LBFGS', lr=0.0001, steps=200, lamb=0.01,  lamb_entropy=1) #entropy 10
+    model = KAN(width=[3, 7, 3], grid=7, k=3, seed=21)
+    history = model.fit(dataset, opt='LBFGS', lr=0.0001, steps=200, lamb=0.0,  lamb_entropy=1) #entropy 10
+    plot_metric(history['train_loss'], history['test_loss'], 'Loss',
+                'model/kan/training_kan_' + kinematics + '_grid_7_loss.png')
 
-    # for value in grid:
-    #     model = model.refine(value)
-    #     history = model.fit(dataset, opt=config['optimizer'], lr=config['learning_rate'],
-    #                         steps=config['steps'], lamb=config['lambda'], lamb_entropy=5, batch=config['batch'])
+    for value in grid:
+        model = model.refine(10)
+        history = model.fit(dataset, opt='LBFGS', lr=0.0001, steps=200, lamb=0.0,  lamb_entropy=1)
+        # Plotta e salva i risultati
+        plot_metric(history['train_loss'], history['test_loss'], 'Loss',
+                    'model/kan/training_kan_' + kinematics + '_grid_10_loss.png')
     #
     # model = model.prune()
 

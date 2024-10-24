@@ -10,7 +10,8 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import r2_score
 
-from utils import read_data, prepare_data, plot_metric
+from simulator import plotSimulation
+from utils import read_data, prepare_data, plot_metric, generate_sample_data
 
 
 #### A PARTIRE DA UNA CONFIGURAZIONE, PREDIRE L'ATTUAZIONE
@@ -205,30 +206,34 @@ def main():
     # inserire un modo per chiede se addestrare un modello per cinematica diretta o indiretta per cambiare gli input
 
     # Usa la ricerca casuale per trovare i migliori iperparametri
-    X, Y = read_data('dataset.txt', 'inverse')
+    # X, Y = read_data('dataset.txt', 'inverse')
     # random_search(X, Y, 3, 3, 200, 20, 'inverse')
 
-    final_training(X, Y, 'inverse')
+    # final_training(X, Y, 'inverse')
 
-    # # Carica il modello salvato
-    # model = InverseKinematicsModel()
-    # model.load_state_dict(torch.load('model/mlp/nn_model.pth'))
-    # model.eval()  # Imposta il modello in modalità di valutazione
+    # Carica il modello salvato
+    model = KinematicsModel()
+    model.load_state_dict(torch.load('model/mlp/nn_model.pth'))
+    model.eval()  # Imposta il modello in modalità di valutazione
     #
-    # # test del modello con esempi generati randomicamente
-    # num_test_samples = 1
-    # X_test, y_true = generate_sample_data(num_test_samples)
-    # X_test_tensor = torch.FloatTensor(X_test)
+    # test del modello con esempi generati randomicamente
+    num_test_samples = 1
+    X_test, y_true = generate_sample_data(num_test_samples)
+    X_test_tensor = torch.FloatTensor(X_test)
     #
-    # with torch.no_grad():
-    #     y_pred = model(X_test_tensor).numpy()
-    #
-    # print("Test Results:")
-    # for i in range(num_test_samples):
-    #     print(f"Input (x, y, z): {X_test[i]}")
-    #     print(f"Predicted actuation: {y_pred[i]}")
-    #     print(f"True actuation: {y_true[i]}")
-    #     print()
+    with torch.no_grad():
+        y_pred = model(X_test_tensor).numpy()
+
+    print("Test Results:")
+    for i in range(num_test_samples):
+        print(f"Input (x, y, z): {X_test[i]}")
+        print(f"Predicted actuation: {y_pred[i]}")
+        print(f"True actuation: {y_true[i]}")
+        print()
+
+    plotSimulation(y_pred)
+
+    # Aggancio con il simulatore
 
 
 # Test del modello

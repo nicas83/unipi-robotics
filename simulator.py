@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import math
 
+
 # test
 def fk_indep(conf):
     Nsegs = len(conf["k"])
@@ -210,7 +211,7 @@ def generateRandomDataset(num_simulation):
     # Definisci il range per ogni coordinata tra 0.1 e 1
     x_range = np.round(np.random.uniform(0.0, 1, num_simulation), 3)
     y_range = np.round(np.random.uniform(0.0, 1, num_simulation), 3)
-    z_range = np.round(np.random.uniform(0.1, 1, num_simulation), 3)
+    z_range = np.round(np.random.uniform(0.0, 1, num_simulation), 3)
 
     # Genera tutte le possibili combinazioni
     all_combinations = list(itertools.product(x_range, y_range, z_range))
@@ -235,30 +236,38 @@ def generateRandomDataset(num_simulation):
             f.write(f"{flatten_array(act)} {flatten_array(poses)} {flatten_array(configuration)} \n")
 
 
+def plotSimulation(actuator):
+    actuator = np.array([
+        [.1, .1, .156],
+        # [.2, .18, .2],
+        # [.2, .2, .18]
+    ])
+    R = .02
+
+    # conf = {}
+    # conf["l"] = np.array([1, 1, 1])
+    # conf["k"] = np.array([np.pi/2, np.pi/2, np.pi])
+    # conf["alpha"] = np.array([0, -np.pi/2, -np.pi/2])
+
+    conf = fk_dep(actuator, R)
+    poses = fk_indep(conf)
+    plot_robot(actuator, R, conf, poses)
+
+    print("Poses:")
+    print(poses)
+    print("Configuration:")
+    print(conf_to_mat(conf))
+
+
 def main():
     # num simulazioni in input
     generateRandomDataset(100)
-
-    # act = np.array([
-    #     [.1, .1, .156],
-    #     # [.2, .18, .2],
-    #     # [.2, .2, .18]
-    # ])
-    # R = .02
-    #
-    # # conf = {}
-    # # conf["l"] = np.array([1, 1, 1])
-    # # conf["k"] = np.array([np.pi/2, np.pi/2, np.pi])
-    # # conf["alpha"] = np.array([0, -np.pi/2, -np.pi/2])
-    #
-    # conf = fk_dep(act, R)
-    # poses = fk_indep(conf)
-    # plot_robot(act, R, conf, poses)
-    #
-    # print("Poses:")
-    # print(poses)
-    # print("Configuration:")
-    # print(conf_to_mat(conf))
+    act = np.array([
+        [.1, .1, .156],
+        # [.2, .18, .2],
+        # [.2, .2, .18]
+    ])
+    plotSimulation(act)
 
 
 if __name__ == "__main__":
