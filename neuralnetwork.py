@@ -14,11 +14,16 @@ from simulator import plotSimulation
 from utils import read_data, prepare_data, plot_metric, generate_sample_data
 
 
-#### A PARTIRE DA UNA CONFIGURAZIONE, PREDIRE L'ATTUAZIONE
 # Definizione del modello
 class KinematicsModel(nn.Module):
-    def __init__(self, input_size, hidden_sizes, output_size, dropout_rate=0.2):
+    def __init__(self, *args, **kwargs):
         super(KinematicsModel, self).__init__()
+
+        input_size = kwargs.get('input_size', 10)
+        hidden_sizes = kwargs.get('hidden_sizes', [64, 64])
+        output_size = kwargs.get('output_size', 1)
+        dropout_rate = kwargs.get('dropout_rate', 0.2)
+
         layers = []
         for i in range(len(hidden_sizes)):
             if i == 0:
@@ -102,7 +107,8 @@ def random_search(X, Y, input_size, output_size, num_epochs, num_trials=20, kine
 
 
 def train_final_model(X, Y, best_params, input_size, output_size, num_epochs):
-    model = KinematicsModel(input_size, best_params['hidden_sizes'], output_size, best_params['dropout_rate'])
+    model = KinematicsModel(input_size=input_size, hidden_sizes=best_params['hidden_sizes'], output_size=output_size,
+                            dropout_rate=best_params['dropout_rate'])
     if best_params['optimization'] == 'Adam':
         optimizer = optim.Adam(model.parameters(), lr=best_params['learning_rate'],
                                weight_decay=best_params['weight_decay'])
@@ -202,38 +208,54 @@ def final_training(X, Y, kinematics='inverse'):
     plot_metric(train_r2_scores, val_r2_scores, 'R² Score', 'model/mlp/final_training_' + kinematics + '_r2.png')
 
 
+def inference(X, kinematics):
+    # Carica il modello salvato
+    best_params = load_best_param('search/random_search_results_' + kinematics + '.json')
+    model = KinematicsModel(input_size=3, hidden_sizes=best_params['hidden_sizes'], output_size=3,
+                            dropout_rate=best_params['dropout_rate'])
+
+    model.load_state_dict(torch.load('model/mlp/final_model_' + kinematics + '.pth'))
+    model.eval()  # Imposta il modello in modalità di valutazione
+    #
+    # test del modello con esempi generati randomicamente
+    num_test_samples = 1
+    X_test, y_true = generate_sample_data(num_test_samples)
+    # X_test_tensor = torch.FloatTensor(X_test)
+    #
+    actuator = np.array([
+        [.237, .312, .13],
+        #     # [.2, .18, .2],
+        #     # [.2, .2, .18]
+    ])
+    poses = np.array([[-0.006, 0.006, 0.017]])
+    # -0.002 -0.02 -0.036
+    X_test_tensor = torch.FloatTensor(X)
+    with torch.no_grad():
+        y_pred = model(X_test_tensor).numpy()
+
+    return y_pred
+
+
 def main():
     # inserire un modo per chiede se addestrare un modello per cinematica diretta o indiretta per cambiare gli input
-
+    kinematics = 'direct'
     # Usa la ricerca casuale per trovare i migliori iperparametri
     # X, Y = read_data('dataset.txt', 'inverse')
     # random_search(X, Y, 3, 3, 200, 20, 'inverse')
 
     # final_training(X, Y, 'inverse')
 
-    # Carica il modello salvato
-    model = KinematicsModel()
-    model.load_state_dict(torch.load('model/mlp/nn_model.pth'))
-    model.eval()  # Imposta il modello in modalità di valutazione
-    #
-    # test del modello con esempi generati randomicamente
-    num_test_samples = 1
-    X_test, y_true = generate_sample_data(num_test_samples)
-    X_test_tensor = torch.FloatTensor(X_test)
-    #
-    with torch.no_grad():
-        y_pred = model(X_test_tensor).numpy()
-
+    expected = [0, 0, 0.1]
+    prediction = inference(np.array([[1, 1, 1]]), kinematics)
     print("Test Results:")
-    for i in range(num_test_samples):
-        print(f"Input (x, y, z): {X_test[i]}")
-        print(f"Predicted actuation: {y_pred[i]}")
-        print(f"True actuation: {y_true[i]}")
-        print()
-
-    plotSimulation(y_pred)
-
-    # Aggancio con il simulatore
+    if kinematics == 'inverse':
+        print(f"True actuation: {expected}")
+        print(f"Predicted actuation: {prediction}")
+        plotSimulation(prediction)
+    else:
+        # print(f"Input (x, y, z):, {poses} ")
+        print(f"Ture poses: {expected}")
+        print(f"Predicted poses: {prediction}")
 
 
 # Test del modello

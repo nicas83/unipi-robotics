@@ -237,11 +237,11 @@ def generateRandomDataset(num_simulation):
 
 
 def plotSimulation(actuator):
-    actuator = np.array([
-        [.1, .1, .156],
-        # [.2, .18, .2],
-        # [.2, .2, .18]
-    ])
+    # actuator = np.array([
+    #     [.1, .1, .1],
+    #     # [.2, .18, .2],
+    #     # [.2, .2, .18]
+    # ])
     R = .02
 
     # conf = {}
@@ -261,9 +261,9 @@ def plotSimulation(actuator):
 
 def main():
     # num simulazioni in input
-    generateRandomDataset(100)
+    # generateRandomDataset(100)
     act = np.array([
-        [.1, .1, .156],
+        [.237, .312, .13],
         # [.2, .18, .2],
         # [.2, .2, .18]
     ])

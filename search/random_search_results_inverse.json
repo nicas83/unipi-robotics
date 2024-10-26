@@ -1,0 +1,294 @@
+[
+  {
+    "hidden_sizes": [
+      256,
+      64,
+      128
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.0001,
+    "weight_decay": 1e-06,
+    "batch_size": 128,
+    "dropout_rate": 0.12521643106078134,
+    "val_loss": 0.027233915403485298,
+    "r2_score": 0.6292892204722428
+  },
+  {
+    "hidden_sizes": [
+      512,
+      512,
+      512
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.01,
+    "weight_decay": 0,
+    "batch_size": 256,
+    "dropout_rate": 0.470740464420641,
+    "val_loss": 0.02844805084168911,
+    "r2_score": 0.6134942731422018
+  },
+  {
+    "hidden_sizes": [
+      256,
+      128,
+      256
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.0001,
+    "weight_decay": 0,
+    "batch_size": 64,
+    "dropout_rate": 0.12247620390651277,
+    "val_loss": 0.028538957238197327,
+    "r2_score": 0.6122472018319699
+  },
+  {
+    "hidden_sizes": [
+      256,
+      128,
+      128,
+      64,
+      64
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.1,
+    "weight_decay": 1e-06,
+    "batch_size": 128,
+    "dropout_rate": 0.10283462583854806,
+    "val_loss": 0.028551043942570686,
+    "r2_score": 0.6119170731465525
+  },
+  {
+    "hidden_sizes": [
+      128,
+      64,
+      128
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.0001,
+    "weight_decay": 1e-05,
+    "batch_size": 256,
+    "dropout_rate": 0.2416581679838163,
+    "val_loss": 0.029626717790961266,
+    "r2_score": 0.5974101540388422
+  },
+  {
+    "hidden_sizes": [
+      128,
+      128,
+      512,
+      64,
+      256
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.001,
+    "weight_decay": 1e-05,
+    "batch_size": 64,
+    "dropout_rate": 0.4052065547725233,
+    "val_loss": 0.03257153555750847,
+    "r2_score": 0.5586664936954603
+  },
+  {
+    "hidden_sizes": [
+      64,
+      512,
+      256,
+      512,
+      256
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.001,
+    "weight_decay": 1e-05,
+    "batch_size": 64,
+    "dropout_rate": 0.13026303069666922,
+    "val_loss": 0.03281726688146591,
+    "r2_score": 0.5563528243719772
+  },
+  {
+    "hidden_sizes": [
+      512,
+      128,
+      64,
+      64,
+      64
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "batch_size": 64,
+    "dropout_rate": 0.22051112189056427,
+    "val_loss": 0.03290359675884247,
+    "r2_score": 0.5536091771079005
+  },
+  {
+    "hidden_sizes": [
+      256,
+      256
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.0001,
+    "weight_decay": 1e-06,
+    "batch_size": 64,
+    "dropout_rate": 0.34016009171229045,
+    "val_loss": 0.03302353248000145,
+    "r2_score": 0.5524257822667705
+  },
+  {
+    "hidden_sizes": [
+      512,
+      64,
+      128,
+      128
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.01,
+    "weight_decay": 0.0001,
+    "batch_size": 256,
+    "dropout_rate": 0.4146481700439003,
+    "val_loss": 0.03792142868041992,
+    "r2_score": 0.48648013331851914
+  },
+  {
+    "hidden_sizes": [
+      128,
+      256,
+      128
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.001,
+    "weight_decay": 1e-06,
+    "batch_size": 128,
+    "dropout_rate": 0.21829152332453386,
+    "val_loss": 0.03859354928135872,
+    "r2_score": 0.47815250162201034
+  },
+  {
+    "hidden_sizes": [
+      256,
+      128,
+      128
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.01,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "dropout_rate": 0.46195150516543626,
+    "val_loss": 0.03947380185127258,
+    "r2_score": 0.4662616643040513
+  },
+  {
+    "hidden_sizes": [
+      128,
+      128
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "dropout_rate": 0.18738150269679965,
+    "val_loss": 0.039690397679805756,
+    "r2_score": 0.46425255331070336
+  },
+  {
+    "hidden_sizes": [
+      512,
+      512,
+      256
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.0001,
+    "weight_decay": 0,
+    "batch_size": 128,
+    "dropout_rate": 0.22388869777664666,
+    "val_loss": 0.04196585342288017,
+    "r2_score": 0.4345110884318653
+  },
+  {
+    "hidden_sizes": [
+      128,
+      256,
+      256
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.0001,
+    "weight_decay": 1e-06,
+    "batch_size": 128,
+    "dropout_rate": 0.16282237856198828,
+    "val_loss": 0.04225539788603783,
+    "r2_score": 0.4305041505318213
+  },
+  {
+    "hidden_sizes": [
+      64,
+      64,
+      128,
+      128,
+      64
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.001,
+    "weight_decay": 0,
+    "batch_size": 128,
+    "dropout_rate": 0.3977463429134155,
+    "val_loss": 0.043310195207595825,
+    "r2_score": 0.41704362647107357
+  },
+  {
+    "hidden_sizes": [
+      64,
+      256,
+      64,
+      256,
+      128
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.001,
+    "weight_decay": 1e-05,
+    "batch_size": 128,
+    "dropout_rate": 0.41886061481573433,
+    "val_loss": 0.04362570121884346,
+    "r2_score": 0.4123643415403951
+  },
+  {
+    "hidden_sizes": [
+      256,
+      64,
+      256,
+      512,
+      64
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.01,
+    "weight_decay": 0,
+    "batch_size": 256,
+    "dropout_rate": 0.1659894748095773,
+    "val_loss": 0.043967779725790024,
+    "r2_score": 0.4067990102909402
+  },
+  {
+    "hidden_sizes": [
+      128,
+      512
+    ],
+    "optimization": "SGD",
+    "learning_rate": 0.0001,
+    "weight_decay": 1e-06,
+    "batch_size": 64,
+    "dropout_rate": 0.4808958677662699,
+    "val_loss": 0.05323338136076927,
+    "r2_score": 0.28533326068795484
+  },
+  {
+    "hidden_sizes": [
+      512,
+      256,
+      128
+    ],
+    "optimization": "Adam",
+    "learning_rate": 0.01,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "dropout_rate": 0.313410178636774,
+    "val_loss": 0.07502478361129761,
+    "r2_score": -0.010440607952646749
+  }
+]

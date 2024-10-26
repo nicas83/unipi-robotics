@@ -1,0 +1,12 @@
+[{
+    "hidden_layers": 2,
+    "neurons": 19,
+    "grid": 15,
+    "k": 3,
+    "seed": 21,
+    "optimizer": "Adam",
+    "learning_rate": 0.001,
+    "lambda": 0.0,
+    "steps": 200,
+    "mse": 0.06482952833175659
+  }]
