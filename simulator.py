@@ -205,22 +205,22 @@ def flatten_array(arr):
     return ' '.join(map(str, arr.flatten()))
 
 
-def generateRandomDataset(num_simulation):
+def generateRandomDataset(num_simulation, dataset_name):
     R = .02
 
     # Definisci il range per ogni coordinata tra 0.1 e 1
-    x_range = np.round(np.random.uniform(0.0, 1, num_simulation), 3)
-    y_range = np.round(np.random.uniform(0.0, 1, num_simulation), 3)
-    z_range = np.round(np.random.uniform(0.0, 1, num_simulation), 3)
+    attuator1 = np.round(np.random.uniform(0.2, 0.4, num_simulation), 3)
+    attuator2 = np.round(np.random.uniform(0.2, 0.4, num_simulation), 3)
+    attuator3 = np.round(np.random.uniform(0.2, 0.4, num_simulation), 3)
 
     # Genera tutte le possibili combinazioni
-    all_combinations = list(itertools.product(x_range, y_range, z_range))
+    all_combinations = list(itertools.product(attuator1, attuator2, attuator3))
     random.shuffle(all_combinations)
 
     # Apri il file per scrivere i risultati
-    with open('dataset.txt', 'w') as f:
+    with open(dataset_name, 'w') as f:
         # Scrivi l'intestazione
-        f.write(" actuation (3 values -xyz) poses (6 values -xyz, zyx euler angles) configuration (3 values xyz)  \n")
+        f.write("actuation1 actuation2 actuation3 pose1 pose2 pose3 pose4 pose5 pose6 x y z config1 config2 config3 additional1 additional2 additional3 quadrante\n")
 
         # Itera su tutte le combinazioni, recuperandone al massimo 100: DA CAMBIARE IN FASE DI TRAINING DEFINITIVO
         for i, combination in enumerate(all_combinations[:100000]):
@@ -261,13 +261,13 @@ def plotSimulation(actuator):
 
 def main():
     # num simulazioni in input
-    # generateRandomDataset(100)
-    act = np.array([
-        [.237, .312, .13],
-        # [.2, .18, .2],
-        # [.2, .2, .18]
-    ])
-    plotSimulation(act)
+    generateRandomDataset(100, 'new_dataset.txt')
+    # act = np.array([
+    #     [.1, .1, .1],
+    #     # [.2, .18, .2],
+    #     # [.2, .2, .18]
+    # ])
+    # plotSimulation(act)
 
 
 if __name__ == "__main__":

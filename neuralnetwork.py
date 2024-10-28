@@ -1,5 +1,6 @@
 import json
 import random
+import time
 from operator import itemgetter
 
 import numpy as np
@@ -45,22 +46,24 @@ class KinematicsModel(nn.Module):
 def random_search(X, Y, input_size, output_size, num_epochs, num_trials=20, kinematics='inverse'):
     all_results = []
 
+    start_time = time.perf_counter()
     for trial in range(num_trials):
         print('Numero trial:', trial)
         # Genera iperparametri casuali
         hidden_sizes = [random.choice([64, 128, 256, 512]) for _ in range(random.randint(2, 5))]
-        learning_rate = random.choice([0.1, 0.01, 0.001, 0.0001])
+        learning_rate = random.choice([0.1, 1e-2, 1e-3, 1e-4])
         batch_size = random.choice([32, 64, 128, 256])
         dropout_rate = random.uniform(0.1, 0.5)
-        weight_decay = random.choice([0, 0.0001, 0.00001, 0.000001])
-        optimization = random.choice(['Adam', 'SGD'])
+        weight_decay = random.choice([0, 1e-4, 1e-5, 1e-6])
+        optimization = random.choice(['Adam'])
         print('Generati parametri: hidden size: ', hidden_sizes, '- lr: ', learning_rate, '- batch_size:', batch_size,
               '- dropout: ', dropout_rate, '- decay: ', weight_decay, '- optimizer: ', optimization)
 
         # Crea e addestra il modello
-        model = KinematicsModel(input_size, hidden_sizes, output_size, dropout_rate)
+        model = KinematicsModel(input_size=input_size, hidden_sizes=hidden_sizes, output_size=output_size,
+                                dropout_rate=dropout_rate)
         if optimization == 'Adam':
-            optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+            optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
         else:
             optimizer = optim.SGD(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
@@ -82,9 +85,8 @@ def random_search(X, Y, input_size, output_size, num_epochs, num_trials=20, kine
         with torch.no_grad():
             val_outputs = model(torch.FloatTensor(X_val))
             val_loss = nn.MSELoss()(val_outputs, torch.FloatTensor(Y_val))
-            val_r2 = r2_score(Y_val, val_outputs.numpy())
 
-        print(f"Trial {trial + 1}/{num_trials}: Val Loss: {val_loss:.4f}, R² Score: {val_r2:.4f}")
+        print(f"Trial {trial + 1}/{num_trials}: Val Loss: {val_loss:.4f}")
 
         best_params = {
             'hidden_sizes': hidden_sizes,
@@ -93,10 +95,13 @@ def random_search(X, Y, input_size, output_size, num_epochs, num_trials=20, kine
             'weight_decay': weight_decay,
             'batch_size': batch_size,
             'dropout_rate': dropout_rate,
-            'val_loss': val_loss.item(),
-            'r2_score': val_r2
+            'val_loss': val_loss.item()
         }
         all_results.append(best_params)
+
+    end_time = time.perf_counter()
+    execution_time = end_time - start_time
+    print(f"Il modello è stato addestrato in {execution_time:.4f} secondi.")
 
     # Ordina i risultati per validation loss
     sorted_results = sorted(all_results, key=itemgetter('val_loss'))
@@ -106,9 +111,13 @@ def random_search(X, Y, input_size, output_size, num_epochs, num_trials=20, kine
         json.dump(sorted_results, f, indent=2)
 
 
-def train_final_model(X, Y, best_params, input_size, output_size, num_epochs):
-    model = KinematicsModel(input_size=input_size, hidden_sizes=best_params['hidden_sizes'], output_size=output_size,
-                            dropout_rate=best_params['dropout_rate'])
+def train_final_model(X, Y, best_params, input_size, output_size, num_epochs, model=None):
+    start_time = time.perf_counter()
+    if model is None:
+        model = KinematicsModel(input_size=input_size, hidden_sizes=best_params['hidden_sizes'],
+                                output_size=output_size,
+                                dropout_rate=best_params['dropout_rate'])
+
     if best_params['optimization'] == 'Adam':
         optimizer = optim.Adam(model.parameters(), lr=best_params['learning_rate'],
                                weight_decay=best_params['weight_decay'])
@@ -119,12 +128,10 @@ def train_final_model(X, Y, best_params, input_size, output_size, num_epochs):
 
     X_train, X_val, Y_train, Y_val = train_test_split(X, Y, test_size=0.2, random_state=42)
     train_loader = DataLoader(TensorDataset(torch.FloatTensor(X_train), torch.FloatTensor(Y_train)),
-                              batch_size=best_params['batch_size'], shuffle=True)
+                              batch_size=best_params['batch_size'], shuffle=True, drop_last=True)
 
     train_losses = []
     val_losses = []
-    train_r2_scores = []
-    val_r2_scores = []
 
     for epoch in range(num_epochs):
         model.train()
@@ -148,27 +155,23 @@ def train_final_model(X, Y, best_params, input_size, output_size, num_epochs):
         epoch_train_loss /= len(X_train)
         train_losses.append(epoch_train_loss)
 
-        epoch_train_outputs = torch.cat(epoch_train_outputs)
-        epoch_train_targets = torch.cat(epoch_train_targets)
-        train_r2 = r2_score(epoch_train_targets.numpy(), epoch_train_outputs.numpy())
-        train_r2_scores.append(train_r2)
-
         model.eval()
         with torch.no_grad():
             val_outputs = model(torch.FloatTensor(X_val))
             val_loss = criterion(val_outputs, torch.FloatTensor(Y_val)).item()
-            val_r2 = r2_score(Y_val, val_outputs.numpy())
 
         avg_train_loss = sum(epoch_train_losses) / len(epoch_train_losses)
         # train_losses.append(avg_train_loss)
         val_losses.append(val_loss)
-        val_r2_scores.append(val_r2)
 
         if (epoch + 1) % 10 == 0:
             print(f'Epoch [{epoch + 1}/{num_epochs}], Train Loss: {avg_train_loss:.4f}, Val Loss: {val_loss:.4f}')
-            print(f'Train R² Score: {train_r2:.4f}, Val R² Score: {val_r2:.4f}')
 
-    return model, train_losses, val_losses, train_r2_scores, val_r2_scores
+    end_time = time.perf_counter()
+    execution_time = end_time - start_time
+    print(f"Il modello è stato addestrato in {execution_time:.4f} secondi.")
+
+    return model, train_losses, val_losses, execution_time
 
 
 def load_best_param(filename):
@@ -195,17 +198,15 @@ def load_best_param(filename):
 def final_training(X, Y, kinematics='inverse'):
     # Addestra il modello finale con i migliori iperparametri
     best_params = load_best_param('search/random_search_results_' + kinematics + '.json')
-    final_model, train_losses, val_losses, train_r2_scores, val_r2_scores = train_final_model(X, Y, best_params, 3, 3,
-                                                                                              200)
+    final_model, train_losses, val_losses, execution_time = train_final_model(X, Y, best_params, 3, 3,
+                                                                              200)
 
     # Salva il modello e i risultati
     torch.save(final_model.state_dict(), 'model/mlp/final_model_' + kinematics + '.pth')
-    np.savez('model/mlp/final_' + kinematics + '_training_metrics.npz', train_losses=train_losses,
-             val_losses=val_losses,
-             val_r2_scores=val_r2_scores)
+    np.savez('model/metrics/final_mlp-' + kinematics + '_training_metrics.npz', train_losses=train_losses,
+             val_losses=val_losses, execution_time=execution_time)
 
-    plot_metric(train_losses, val_losses, 'Loss', 'model/mlp/final_training_' + kinematics + '_loss.png')
-    plot_metric(train_r2_scores, val_r2_scores, 'R² Score', 'model/mlp/final_training_' + kinematics + '_r2.png')
+    plot_metric(train_losses, val_losses, 'Loss', 'model/mlp/plot/final_training_' + kinematics + '_loss.png')
 
 
 def inference(X, kinematics):
@@ -236,26 +237,58 @@ def inference(X, kinematics):
     return y_pred
 
 
+def continual_learning(X, Y, kinematics, save_new_model=True, model=None):
+    # Carica il modello salvato
+    best_params = load_best_param('search/random_search_results_' + kinematics + '.json')
+    if model is None:
+        model = KinematicsModel(input_size=3, hidden_sizes=best_params['hidden_sizes'], output_size=3,
+                                dropout_rate=best_params['dropout_rate'])
+        model.load_state_dict(torch.load('model/mlp/final_model_' + kinematics + '.pth'))
+
+    final_model, train_losses, val_losses, execution_time = train_final_model(X, Y, best_params, 3, 3,
+                                                                              200, model)
+    if save_new_model:
+        torch.save(final_model.state_dict(), 'model/mlp/final_model_' + kinematics + '.pth')
+
+    return train_losses, val_losses, final_model
+
+
 def main():
-    # inserire un modo per chiede se addestrare un modello per cinematica diretta o indiretta per cambiare gli input
-    kinematics = 'direct'
-    # Usa la ricerca casuale per trovare i migliori iperparametri
-    # X, Y = read_data('dataset.txt', 'inverse')
-    # random_search(X, Y, 3, 3, 200, 20, 'inverse')
+    kinematics = 'inverse'
 
-    # final_training(X, Y, 'inverse')
+    ###### TRAINING MODEL ####################
+    # # Usa la ricerca casuale per trovare i migliori iperparametri
+    # X, Y = read_data('datasets/dataset.txt', kinematics)
+    # # random_search(X, Y, 3, 3, 200, 20, kinematics)
+    # final_training(X, Y, kinematics)
 
-    expected = [0, 0, 0.1]
-    prediction = inference(np.array([[1, 1, 1]]), kinematics)
-    print("Test Results:")
-    if kinematics == 'inverse':
-        print(f"True actuation: {expected}")
-        print(f"Predicted actuation: {prediction}")
-        plotSimulation(prediction)
-    else:
-        # print(f"Input (x, y, z):, {poses} ")
-        print(f"Ture poses: {expected}")
-        print(f"Predicted poses: {prediction}")
+    ####### CONTINUAL LEARNING ################
+    X, Y = read_data("datasets/workspaces/quadrante_I.csv", kinematics)
+    train_losses, val_losses, model = continual_learning(X, Y, kinematics, save_new_model=True)
+    np.savez('continual_learning/metrics/final_mlp-' + kinematics + '_continual_learning_quadI_metrics.npz',
+             train_losses=train_losses, val_losses=val_losses)
+    plot_metric(train_losses, val_losses, 'Continual Learning Loss',
+                'continual_learning/mlp_' + kinematics + '_quadrante_I.png')
+
+    X, Y = read_data("datasets/workspaces/quadrante_II.csv", kinematics)
+    train_losses, val_losses, model = continual_learning(X, Y, kinematics, save_new_model=True, model=model)
+    np.savez('continual_learning/metrics/final_mlp-' + kinematics + '_continual_learning_quadII_metrics.npz',
+             train_losses=train_losses, val_losses=val_losses)
+    plot_metric(train_losses, val_losses, 'Continual Learning Loss',
+                'continual_learning/mlp_' + kinematics + '_quadrante_II.png')
+
+    #### INFERENCE ########################
+    # expected = [0.1, 0.1, 0.1]
+    # prediction = inference(np.array([[0.0, 0.0, 0.1]]), kinematics)
+    # print("Test Results:")
+    # if kinematics == 'inverse':
+    #     print(f"True actuation: {expected}")
+    #     print(f"Predicted actuation: {prediction}")
+    #     plotSimulation(prediction)
+    # else:
+    #     # print(f"Input (x, y, z):, {poses} ")
+    #     print(f"Ture poses: {expected}")
+    #     print(f"Predicted poses: {prediction}")
 
 
 # Test del modello
