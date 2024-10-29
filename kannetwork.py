@@ -6,6 +6,7 @@ import time
 
 from kan import KAN, create_dataset_from_data
 from matplotlib import pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
 
 from simulator import plotSimulation
 from utils import read_data, plot_metric, split_cartesian_workspace
@@ -82,7 +83,7 @@ def grid_search_kan(X, Y, test_size=0.2):
         json.dump(all_configs, f, indent=2)
 
 
-def train_final_model(X, Y, config_file, kinematics='inverse'):
+def train_final_model(X, Y, config_file, kinematics='inverse', normalize=True):
     with open(config_file, 'r') as f:
         all_configs = json.load(f)
 
@@ -91,8 +92,19 @@ def train_final_model(X, Y, config_file, kinematics='inverse'):
     print("Training final model with best configuration:")
     print(config)
 
-    X_tensor = torch.FloatTensor(X)
-    Y_tensor = torch.FloatTensor(Y)
+    if normalize:
+        input_scaler = MinMaxScaler(feature_range=(0, 1))
+        X_normalized = input_scaler.fit_transform(X)
+
+        # Normalizzazione dell'output (se necessario)
+        output_scaler = MinMaxScaler(feature_range=(0, 1))
+        Y_normalized = output_scaler.fit_transform(Y)
+
+        X_tensor = torch.FloatTensor(X_normalized)
+        Y_tensor = torch.FloatTensor(Y_normalized)
+    else:
+        X_tensor = torch.FloatTensor(X)
+        Y_tensor = torch.FloatTensor(Y)
 
     dataset = create_dataset_from_data(X_tensor, Y_tensor, train_ratio=0.8, device='cpu')
     #  n,2n+1
@@ -106,7 +118,7 @@ def train_final_model(X, Y, config_file, kinematics='inverse'):
                         lamb=config['lambda'])
 
     plot_metric(history['train_loss'], history['test_loss'], 'Loss',
-                'model/kan/plot/1training_kan_' + kinematics + '_loss.png')
+                'model/kan/plot/training_kan_normalized' + kinematics + '_loss.png')
 
     # for value in grid:
     #     model = model.refine(value)
@@ -118,24 +130,24 @@ def train_final_model(X, Y, config_file, kinematics='inverse'):
     end_time = time.perf_counter()
     execution_time = end_time - start_time
     print(f"Il modello è stato addestrato in {execution_time:.4f} secondi.")
-    np.savez('model/metrics/1final_kan-' + kinematics + '_training_metrics.npz', train_losses=history['train_loss'],
+    np.savez('model/metrics/final_kan-' + kinematics + '_normalized_training_metrics.npz', train_losses=history['train_loss'],
              val_losses=history['test_loss'], execution_time=execution_time)
 
     # plot prepruning
     plt.figure(figsize=(15, 20))
     model.plot(beta=10)  # beta controlla la risoluzione del grafo
-    plt.savefig('model/kan/plot/1network_architecture_prepruning_' + kinematics + '.png')
+    plt.savefig('model/kan/plot/1network_architecture_prepruning_' + kinematics + '_normalized.png')
     plt.close()
 
     model = model.prune()
     # plot post pruning
     plt.figure(figsize=(15, 20))
     model.plot(beta=10)  # beta controlla la risoluzione del grafo
-    plt.savefig('model/kan/plot/1network_architecture_postpruning_' + kinematics + '.png')
+    plt.savefig('model/kan/plot/1network_architecture_postpruning_' + kinematics + '_normalized.png')
     plt.close()
 
     # Salva il modello finale
-    model.saveckpt(path='model/kan/1final_model_' + kinematics)
+    model.saveckpt(path='model/kan/1final_model_normalized' + kinematics)
     print("Final model saved")
     return history
 
@@ -164,13 +176,16 @@ def load_best_param(filename):
         return None
 
 
-def inference(X, output_size, kinematics):
+def inference(X, output_size, kinematics,normalized=True):
     # Carica il modello salvato
     best_params = load_best_param('search/grid_search_kan_' + kinematics + '.json')
     model = KAN(width=[X.shape[1], best_params['neurons'], output_size], grid=best_params['grid'], k=best_params['k'],
                 seed=best_params['seed'])
     # carico l'ultimo modello addestrato
-    model = model.loadckpt('model/kan/final_model_' + kinematics)
+    if normalized:
+        model = model.loadckpt('model/kan/final_model_normalized' + kinematics)
+    else:
+        model = model.loadckpt('model/kan/final_model_' + kinematics)
     #
     # Imposta il modello in modalità valutazione
     model.eval()
@@ -203,7 +218,7 @@ def continual_learning(model, config, X, Y, kinematics, save_new_model=False):
 
 
 def main():
-    kinematics = 'inverse'
+    kinematics = 'direct'
 
     ####### MODEL TRAINING ########################
     X, Y = read_data("datasets/new_dataset.txt", kinematics)

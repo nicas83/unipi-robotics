@@ -1,9 +1,11 @@
 import glob
 import os
 
+import joblib
 import numpy as np
 import pandas as pd
 import torch
+from sklearn.preprocessing import StandardScaler
 from torch.utils.data import TensorDataset, DataLoader
 import matplotlib.pyplot as plt
 
@@ -32,6 +34,7 @@ def read_data(filename, kinematics='inverse'):
                 # X.append(base_poses + peak_poses)
                 X.append(peak_poses)
                 Y.append(act)
+
     return np.array(X), np.array(Y)
 
 
