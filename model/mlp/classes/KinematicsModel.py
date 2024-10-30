@@ -18,8 +18,8 @@ class KinematicsModel(nn.Module):
             else:
                 layers.append(nn.Linear(hidden_sizes[i - 1], hidden_sizes[i]))
             layers.append(nn.Tanh())
-            layers.append(nn.BatchNorm1d(hidden_sizes[i]))
-            layers.append(nn.Dropout(dropout_rate))
+            # layers.append(nn.BatchNorm1d(hidden_sizes[i]))
+            # layers.append(nn.Dropout(dropout_rate))
 
         layers.append(nn.Linear(hidden_sizes[-1], output_size))
         if kinematics == 'inverse':

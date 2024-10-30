@@ -1,5 +1,5 @@
 [{
-    "hidden_layers": 2,
+    "hidden_layers": 1,
     "neurons": 22,
     "grid": 15,
     "k": 4,

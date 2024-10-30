@@ -9,45 +9,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import DataLoader, TensorDataset
-from sklearn.metrics import r2_score
 
-from simulator import plotSimulation
-from utils import read_data, prepare_data, plot_metric, generate_sample_data
-
-
-# Definizione del modello
-class KinematicsModel(nn.Module):
-    def __init__(self, *args, **kwargs):
-        super(KinematicsModel, self).__init__()
-
-        input_size = kwargs.get('input_size', 10)
-        hidden_sizes = kwargs.get('hidden_sizes', [64, 64])
-        output_size = kwargs.get('output_size', 1)
-        dropout_rate = kwargs.get('dropout_rate', 0.2)
-        kinematics = kwargs.get('kinematics', 'inverse')
-
-        layers = []
-        for i in range(len(hidden_sizes)):
-            if i == 0:
-                layers.append(nn.Linear(input_size, hidden_sizes[i]))
-            else:
-                layers.append(nn.Linear(hidden_sizes[i - 1], hidden_sizes[i]))
-            layers.append(nn.Tanh())
-            layers.append(nn.BatchNorm1d(hidden_sizes[i]))
-            layers.append(nn.Dropout(dropout_rate))
-
-        layers.append(nn.Linear(hidden_sizes[-1], output_size))
-        if kinematics == 'inverse':
-            layers.append(nn.Sigmoid())
-        else:
-            layers.append(nn.Tanh())
-
-        self.network = nn.Sequential(*layers)
-
-    def forward(self, x):
-        return self.network(x)
+from model.mlp.classes.KinematicsModel import KinematicsModel
+from utils.simulator import plotSimulation
+from utils.utils import read_data, plot_metric
 
 
 def random_search(X, Y, input_size, output_size, num_epochs, num_trials=20, kinematics='inverse'):
@@ -118,7 +85,8 @@ def random_search(X, Y, input_size, output_size, num_epochs, num_trials=20, kine
         json.dump(sorted_results, f, indent=2)
 
 
-def train_final_model(X, Y, best_params, input_size, output_size, num_epochs, kinematics, model=None, normalize=True):
+def train_final_model(X_train, X_val, Y_train, Y_val, best_params, input_size, output_size, num_epochs, kinematics,
+                      model=None, normalize=True):
     if model is None:
         model = KinematicsModel(input_size=input_size, hidden_sizes=best_params['hidden_sizes'],
                                 output_size=output_size,
@@ -132,7 +100,6 @@ def train_final_model(X, Y, best_params, input_size, output_size, num_epochs, ki
                               weight_decay=best_params['weight_decay'])
     criterion = nn.MSELoss()
 
-    X_train, X_val, Y_train, Y_val = train_test_split(X, Y, test_size=0.2, random_state=42)
     if normalize:
         input_scaler = MinMaxScaler(feature_range=(0, 1))
         X_train_normalized = input_scaler.fit_transform(X_train)
@@ -158,49 +125,37 @@ def train_final_model(X, Y, best_params, input_size, output_size, num_epochs, ki
     train_losses = []
     val_losses = []
     epochs_time = []
-
+    train_start_time = time.perf_counter()
+    model.train()
     for epoch in range(num_epochs):
         start_time = time.perf_counter()
-        model.train()
-        epoch_train_losses = []
-        epoch_train_loss = 0.0
-        epoch_train_outputs = []
-        epoch_train_targets = []
+        epoch_loss = 0
+        for batch_X, batch_y in train_loader:
+            batch_X, batch_y = batch_X.to('cpu'), batch_y.to('cpu')
 
-        for inputs, targets in train_loader:
             optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
+            outputs = model(batch_X)
+            loss = criterion(outputs, batch_y)
             loss.backward()
             optimizer.step()
 
-            epoch_train_losses.append(loss.item())
-            epoch_train_loss += loss.item() * inputs.size(0)
-            epoch_train_outputs.append(outputs.detach())
-            epoch_train_targets.append(targets)
-
-        epoch_train_loss /= len(X_train)
-        train_losses.append(epoch_train_loss)
-
+            epoch_loss += loss.item()
         model.eval()
         with torch.no_grad():
-            if normalize:
-                val_outputs = model(torch.FloatTensor(X_val_normalized))
-                val_loss = criterion(val_outputs, torch.FloatTensor(Y_val_normalized)).item()
-            else:
-                val_outputs = model(torch.FloatTensor(X_val))
-                val_loss = criterion(val_outputs, torch.FloatTensor(Y_val)).item()
+            val_outputs = model(torch.FloatTensor(X_val))
+            val_loss = criterion(val_outputs, torch.FloatTensor(Y_val)).item()
 
-        avg_train_loss = sum(epoch_train_losses) / len(epoch_train_losses)
-        # train_losses.append(avg_train_loss)
         val_losses.append(val_loss)
+        avg_loss = epoch_loss / len(train_loader)
+        train_losses.append(avg_loss)
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {avg_loss}')
         end_time = time.perf_counter()
         execution_time = end_time - start_time
         epochs_time.append(execution_time)
-        if (epoch + 1) % 10 == 0:
-            print(f'Epoch [{epoch + 1}/{num_epochs}], Train Loss: {avg_train_loss:.4f}, Val Loss: {val_loss:.4f}')
+    train_end_time = time.perf_counter()
+    train_execution_time = train_end_time-train_start_time
 
-    return model, train_losses, val_losses, epochs_time
+    return model, train_losses, val_losses, epochs_time, train_execution_time
 
 
 def load_best_param(filename):
@@ -226,27 +181,29 @@ def load_best_param(filename):
 
 def final_training(X, Y, kinematics='inverse', normalize=True):
     # Addestra il modello finale con i migliori iperparametri
+    X_train, Y_train, X_val, Y_val = train_test_split(X, Y, test_size=0.2, random_state=42)
     best_params = load_best_param('search/random_search_results_' + kinematics + '.json')
-    final_model, train_losses, val_losses, execution_time = train_final_model(X, Y, best_params, 3, 3,
+    final_model, train_losses, val_losses, execution_time, train_execution_time = train_final_model(X_train, Y_train, X_val, Y_val,
+                                                                              best_params, 3, 3,
                                                                               200, normalize=normalize,
                                                                               kinematics=kinematics)
 
     # Salva il modello e i risultati
-    torch.save(final_model.state_dict(), 'model/mlp/final_model_normalized_' + kinematics + '.pth')
-    np.savez('model/metrics/final_mlp-' + kinematics + '-normalized_training_metrics.npz', train_losses=train_losses,
-             val_losses=val_losses, execution_time=execution_time)
+    torch.save(final_model.state_dict(), 'model/mlp/final_model_' + kinematics + '.pth')
+    np.savez('model/metrics/final_mlp-' + kinematics + '-_training_metrics.npz', train_losses=train_losses,
+             val_losses=val_losses, epoch_execution_time=execution_time, train_execution_time = train_execution_time)
 
     plot_metric(train_losses, val_losses, 'Loss',
-                'model/mlp/plot/final_training_normalized_' + kinematics + '_loss.png')
+                'model/mlp/plot/final_training_' + kinematics + '_loss.png')
 
 
-def inference(X, kinematics, normalized = True):
+def inference(X, kinematics, normalized=False):
     # Carica il modello salvato
     best_params = load_best_param('search/random_search_results_' + kinematics + '.json')
     model = KinematicsModel(input_size=3, hidden_sizes=best_params['hidden_sizes'], output_size=3,
                             dropout_rate=best_params['dropout_rate'])
     if normalized:
-        model.load_state_dict(torch.load('model/mlp/final_model_normalized_' + kinematics + '.pth'))
+        model.load_state_dict(torch.load('model/mlp/final_model_normalized' + kinematics + '.pth'))
     else:
         model.load_state_dict(torch.load('model/mlp/final_model_' + kinematics + '.pth'))
     model.eval()  # Imposta il modello in modalità di valutazione
@@ -269,49 +226,18 @@ def inference(X, kinematics, normalized = True):
     return y_pred
 
 
-def continual_learning(X, Y, kinematics, save_new_model=True, model=None):
-    # Carica il modello salvato
-    best_params = load_best_param('search/random_search_results_' + kinematics + '.json')
-    # if model is None:
-    #     model = KinematicsModel(input_size=3, hidden_sizes=best_params['hidden_sizes'], output_size=3,
-    #                             dropout_rate=best_params['dropout_rate'])
-    #     model.load_state_dict(torch.load('model/mlp/final_model_' + kinematics + '.pth'))
-
-    final_model, train_losses, val_losses, execution_time = train_final_model(X, Y, best_params, 3, 3,
-                                                                              200, model)
-    if save_new_model:
-        torch.save(final_model.state_dict(), 'model/mlp/final_model_' + kinematics + '.pth')
-
-    return train_losses, val_losses, final_model
-
-
 def main():
     kinematics = 'inverse'
 
     ###### TRAINING MODEL ####################
     # # Usa la ricerca casuale per trovare i migliori iperparametri
     X, Y = read_data('datasets/dataset.txt', kinematics)
-    # # random_search(X, Y, 3, 3, 200, 20, kinematics)
+    # # # random_search(X, Y, 3, 3, 200, 20, kinematics)
     final_training(X, Y, kinematics, normalize=False)
 
-    ####### CONTINUAL LEARNING ################
-    # X, Y = read_data("datasets/workspaces/quadrante_I.csv", kinematics)
-    # train_losses, val_losses, model = continual_learning(X, Y, kinematics, save_new_model=True)
-    # np.savez('continual_learning/metrics/final_mlp-' + kinematics + '_continual_learning_quadI_metrics.npz',
-    #          train_losses=train_losses, val_losses=val_losses)
-    # plot_metric(train_losses, val_losses, 'Continual Learning Loss',
-    #             'continual_learning/mlp_' + kinematics + '_quadrante_I.png')
-    #
-    # X, Y = read_data("datasets/workspaces/quadrante_II.csv", kinematics)
-    # train_losses, val_losses, model = continual_learning(X, Y, kinematics, save_new_model=True, model=model)
-    # np.savez('continual_learning/metrics/final_mlp-' + kinematics + '_continual_learning_quadII_metrics.npz',
-    #          train_losses=train_losses, val_losses=val_losses)
-    # plot_metric(train_losses, val_losses, 'Continual Learning Loss',
-    #             'continual_learning/mlp_' + kinematics + '_quadrante_II.png')
-
     #### INFERENCE ########################
-    # expected = [0.1, 0.1, 0.1]
-    # prediction = inference(np.array([[0.0, 0.0, 0.1]]), kinematics, normalized=True)
+    # expected = [0., 0., 0.1]
+    # prediction = inference(np.array([[.1, .1, .1]]), kinematics, normalized=False)
     # print("Test Results:")
     # if kinematics == 'inverse':
     #     print(f"True actuation: {expected}")
